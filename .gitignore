@@ -1,0 +1,40 @@
+# 数据与机密文件（绝不上库）
+*.csv
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
+
+# MES 数据快照、排产表、业务配置文件
+common/
+data/
+*.xlsm
+*.xlsx
+*.xls
+wip_*.json
+ct_samples_*/
+MES数据库.csv
+
+# 凭证与连接配置
+.env
+.env.*
+connections.xml
+*.pem
+*.key
+
+# 运行产物与缓存
+__pycache__/
+*.pyc
+*.pyo
+*.log
+refresh_mes.log
+*.7z
+venv/
+.venv/
+.DS_Store
+Thumbs.db
+
+# SWR 特殊作业要求 PDF（公司内网共享盘文件，不入库）
+*.pdf

@@ -1,0 +1,81 @@
+Web1.1 完整包 v2.30.1(所有改动文件,不再依赖版本顺序)
+========================================================
+
+覆盖以下 16 个文件(等价于当前全部状态),重启后即正确:
+  app.py / auth.py / ct.py / ct_learn.py / db.py / equip.py
+  gen_manual_pdf.py / importer.py / mes.py / monitor.py / swr.py
+  test_smoke.py / version.json / views.py / wip_guide.html / 使用说明书.md
+
+【本版 v2.30.1 · 修正 Owner 锚点:统一按细分项 PACKAGESIZE】
+
+  之前的问题:
+    · Assy PC Owner 按 Product(PRODUCTNAME)匹配;
+    · Inline/ENG 有“找不到 TECHNOLOGY 就按 SPECNAME 猜”的回退。
+
+  本版规则:
+    · Assy PC Owner:按 PACKAGESIZE 匹配,Product 只作参考;
+    · MPC Owner:按 PACKAGESIZE(本来就是);
+    · Inline/ENG:先用 MPC 表的 PACKAGESIZE→TECHNOLOGY 桥,
+      再按 TECHNOLOGY + SPECNAME 匹配;
+    · 去掉 SPECNAME 单独回退:细分项不在 MPC 表里就留空,不猜;
+    · HOLD 取 ENG,其余取 Inline。
+
+  导入与旧数据:
+    · Assy 表按 PACKAGESIZE 去重;同包不同负责人计冲突(后者覆盖前者);
+    · 旧版 JSON 的 Assy 按 Product 键存,系统用记录里的 package 自动归一化;
+    · 建议部署后重新导入一次 Assy 表,得到正确的唯一包数和冲突统计。
+
+  使用指南:
+    · Assy 关联说明改为 PACKAGESIZE;
+    · 去掉 SPECNAME 回退说明;
+    · FAQ 的负责人空白说明同步。
+
+【前置版本关键内容(已含)】
+  v2.30.0 多人并发隔离 / 导出排队右下角提示 / 管理员 rev 校验
+  v2.29.1 使用指南集成(导出 CSV 左边淡蓝色按钮)
+  v2.29.0 产品型号「显示」复选框,隐藏僵尸型号
+  v2.28.1 明细居中 / 分组式图表 / Top8-10 / 竖向天数柱
+  v2.28.0 全宽布局 / 8 图 / 顶层细分 / 系列硬隔离 / 登录回跳 WIP
+  v2.27.0 三类 Owner 导入 + 页面三列
+  v2.26.1 四图表点击联动 + 高亮 + 多条件叠加 + 已选条件标签
+  v2.26.0 WIP 超期分析首版(顶层入口 / LOT 粒度 / 四维统计 / 导出)
+  v2.25.21 后台写操作「报错但其实成功」修复(重算转后台线程)
+  v2.25.20 界面改「数据变了才刷」(/sync_ts)
+  v2.25.19 数据源检查间隔 1 分钟 → 3 分钟
+  v2.25.18 可点击跳转文字去掉下划线
+  v2.25.17 【修复】匿名浏览点工单号看明细"加载失败"
+  v2.25.16 侧边栏只保留「最新版本 + 版本号」
+  v2.25.15 【新功能】SWR 要求查询;test_smoke 增至 48 项
+  v2.25.14 实时WIP柱状图高度上限 430 → 560
+  v2.25.13 统计页:准时完成率回顶部,WIP 图 380→430
+  v2.25.12 【UI/UX】alert 改软提示 toast;表格统一吸顶+斑马纹;全局快捷键
+  v2.25.11 「刷新数据」去掉登录门槛
+  v2.25.10 统计页 WIP 下钻「忽略」修复(首次采用重算转后台)
+  v2.25.9  新建工单点「从 MES 查工序」自动选中型号
+  v2.25.8  设备能力页工序清单补全 + 健康检查变体归一
+  v2.25.7  健康检查页 / 刷新按钮统一 /"即完"改为时间显示
+
+【部署后必做:配置 SWR 公盘路径】
+  打开 <安装目录>\swr.py,把第 19 行的 SWR_ROOT = r"" 填成公盘路径
+  (保留 r"" 前缀):
+      r"\\YOUR_FILE_SERVER\swr"   (UNC 共享)  或  r"Z:\SWR"  (映射盘符)
+  留空时页面显示"未配置公盘路径"提示,不会报错。改完需重启服务。
+
+【验证】
+  · test_smoke.py:97 项进程内 + 21 项 HTTP,共 118 项全部通过;
+  · 新增旧数据归一化测试:Product 键 + package 字段 → 按 package 命中;
+  · 新增细分项锚点测试:PKG1 能查到 Inline,PKG2 不在 MPC 表则为空;
+  · 实机测试:Assy 表 Product 与 MES 不同、PACKAGESIZE 相同,
+    该 PACKAGESIZE 下所有 LOT 仍能拿到 Assy Owner;
+  · Inline 仍按 PACKAGESIZE→TECHNOLOGY→SPECNAME 命中。
+
+【注意】
+  · 本版是口径修正,不改布局/图表/导出列;
+  · 重新导入 Assy 表后,维护面板 Assy 条数变“唯一 PACKAGESIZE 数”,
+    可能比原行数少,正常;
+  · 如不同 Product 同包但负责人不同,导入会报冲突数,建议先修表;
+  · wip_guide.html 必须与 app.py 同目录;
+  · 使用说明书.md 仍标注 v2.23.0,未随功能更新,仅作参考;
+  · gen_manual_pdf.py 是独立命令行工具(需 fpdf2),不参与服务运行。
+
+部署:16 文件全部覆盖 <安装目录> → 停旧进程 → 重启 → Ctrl+Shift+R。

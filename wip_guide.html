@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WIP超期分析使用指南</title>
+<style>
+
+/* Layout: field-manual page. Sticky contents rail on desktop; single column on phone. */
+:root {
+  --bg: #edf1f4;
+  --surface: #ffffff;
+  --surface-2: #e4ebf1;
+  --surface-3: #f6f9fb;
+  --fg: #14212c;
+  --muted: #5a6b7b;
+  --line: #ccd7e1;
+  --line-strong: #aebdca;
+  --accent: #0d5c96;
+  --accent-soft: #e3f0fa;
+  --accent-2: #a85a08;
+  --accent-2-soft: #fdf0df;
+  --danger: #b3261e;
+  --danger-soft: #fbe9e7;
+  --code-bg: #12202c;
+  --code-fg: #d7e7f5;
+  --grid: rgba(13, 92, 150, .055);
+  --shadow: 0 1px 2px rgba(20, 33, 44, .05), 0 10px 28px rgba(20, 33, 44, .06);
+  --sans: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", system-ui, sans-serif;
+  --mono: "Cascadia Code", "JetBrains Mono", Consolas, "Courier New", monospace;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d141b;
+    --surface: #141e28;
+    --surface-2: #1b2834;
+    --surface-3: #101a23;
+    --fg: #e6edf4;
+    --muted: #93a4b5;
+    --line: #2a3a49;
+    --line-strong: #3b5062;
+    --accent: #5eb3f0;
+    --accent-soft: #142c3d;
+    --accent-2: #f0a54a;
+    --accent-2-soft: #2d2114;
+    --danger: #f87171;
+    --danger-soft: #2e1717;
+    --code-bg: #081019;
+    --code-fg: #d7e7f5;
+    --grid: rgba(94, 179, 240, .075);
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 30px rgba(0, 0, 0, .28);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0d141b;
+  --surface: #141e28;
+  --surface-2: #1b2834;
+  --surface-3: #101a23;
+  --fg: #e6edf4;
+  --muted: #93a4b5;
+  --line: #2a3a49;
+  --line-strong: #3b5062;
+  --accent: #5eb3f0;
+  --accent-soft: #142c3d;
+  --accent-2: #f0a54a;
+  --accent-2-soft: #2d2114;
+  --danger: #f87171;
+  --danger-soft: #2e1717;
+  --code-bg: #081019;
+  --code-fg: #d7e7f5;
+  --grid: rgba(94, 179, 240, .075);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 12px 30px rgba(0, 0, 0, .28);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 15.5px;
+  line-height: 1.8;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 56px;
+}
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--accent-2); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+code, .mono { font-family: var(--mono); }
+code {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: .92em;
+}
+
+.page { max-width: 1180px; margin: 0 auto; }
+
+/* ---------- Hero ---------- */
+.hero {
+  margin: 26px 0 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.hero-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(260px, .75fr);
+  gap: 28px;
+  padding: 30px 32px 28px;
+}
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .08em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 2px;
+  background: var(--accent);
+  display: inline-block;
+}
+h1 {
+  font-size: clamp(30px, 4.4vw, 44px);
+  line-height: 1.18;
+  letter-spacing: .01em;
+  margin: 0 0 14px;
+  font-weight: 800;
+  text-wrap: balance;
+}
+.lead {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 62ch;
+  margin: 0;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface-3);
+  color: var(--fg);
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.chip b { color: var(--accent); font-weight: 700; }
+.quick {
+  border: 1px solid var(--line);
+  background: var(--surface-3);
+  border-radius: 9px;
+  padding: 16px 18px;
+  align-self: start;
+}
+.quick .kicker {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: var(--accent-2);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.quick ol { margin: 0; padding-left: 20px; font-size: 13.5px; line-height: 1.75; }
+.quick li + li { margin-top: 5px; }
+.quick strong { font-weight: 700; }
+
+/* ---------- Layout ---------- */
+.shell {
+  display: grid;
+  grid-template-columns: 216px minmax(0, 1fr);
+  gap: 36px;
+  align-items: start;
+}
+.toc {
+  position: sticky;
+  top: 18px;
+  border-top: 2px solid var(--fg);
+  padding-top: 12px;
+  font-size: 13px;
+}
+.toc .toc-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.toc a {
+  display: block;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 4px 0 4px 10px;
+  border-left: 2px solid transparent;
+  line-height: 1.5;
+}
+.toc a:hover { color: var(--fg); border-left-color: var(--line-strong); }
+.toc a.active { color: var(--accent); border-left-color: var(--accent); font-weight: 700; }
+.content { min-width: 0; }
+
+/* ---------- Sections ---------- */
+.sec { padding: 30px 0 6px; border-top: 1px solid var(--line); scroll-margin-top: 18px; }
+.sec:first-child { border-top: 0; padding-top: 4px; }
+.sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
+.step-no {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  border-radius: 5px;
+  padding: 1px 7px;
+  line-height: 1.7;
+}
+h2 { font-size: 22px; line-height: 1.35; margin: 0; font-weight: 800; text-wrap: balance; }
+h3 { font-size: 16px; line-height: 1.5; margin: 0 0 5px; font-weight: 700; }
+p { margin: 0 0 12px; }
+.sec > p:last-child { margin-bottom: 0; }
+.small { font-size: 13px; color: var(--muted); }
+.strong { font-weight: 700; color: var(--fg); }
+
+.callout {
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--accent);
+  background: var(--surface);
+  border-radius: 7px;
+  padding: 13px 16px;
+  margin: 14px 0;
+}
+.callout .tagline {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.callout p:last-child { margin-bottom: 0; }
+.callout.warn { border-top-color: var(--accent-2); background: var(--accent-2-soft); }
+.callout.warn .tagline { color: var(--accent-2); }
+.callout.danger { border-top-color: var(--danger); background: var(--danger-soft); }
+.callout.danger .tagline { color: var(--danger); }
+
+/* ---------- Facts / path ---------- */
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 14px 0; }
+.fact {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 7px;
+  padding: 11px 14px;
+  font-size: 13.5px;
+}
+.fact b { display: block; font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: .05em; margin-bottom: 3px; }
+.path { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 16px 0; }
+.path span {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 5px;
+  padding: 5px 10px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.path i { color: var(--muted); font-style: normal; }
+
+/* ---------- Page map ---------- */
+.map {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 9px;
+  padding: 16px;
+  margin: 16px 0 4px;
+}
+.map-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.map-cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
+.map-cards div {
+  border: 1px dashed var(--line-strong);
+  background: var(--surface-3);
+  border-radius: 4px;
+  padding: 7px 5px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.map-row { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; }
+.map-row .grp {
+  font-size: 11px;
+  font-family: var(--mono);
+  letter-spacing: .05em;
+  color: var(--accent);
+  margin-bottom: 5px;
+}
+.map-boxes { display: grid; gap: 6px; }
+.map-boxes.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.map-boxes.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.map-boxes div {
+  border: 1px dashed var(--line-strong);
+  border-radius: 4px;
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--muted);
+  background: var(--surface-3);
+}
+.map-table {
+  margin-top: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  border-radius: 4px;
+  padding: 9px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--fg);
+  font-weight: 700;
+}
+
+/* ---------- Chart cards ---------- */
+.chart-group { margin-top: 20px; }
+.chart-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+}
+.chart-group-head b { font-size: 13px; font-family: var(--mono); letter-spacing: .05em; color: var(--accent); }
+.chart-group-head span { font-size: 12px; color: var(--muted); }
+.chart-grid { display: grid; gap: 10px; }
+.chart-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.chart-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.chart-card {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 7px;
+  padding: 12px 13px;
+}
+.chart-card h3 { font-size: 14.5px; }
+.chart-card .what, .chart-card .how { font-size: 12.5px; line-height: 1.7; margin: 0; }
+.chart-card .what { color: var(--fg); }
+.chart-card .how { color: var(--muted); margin-top: 4px; }
+.chart-card .how b { color: var(--accent); font-weight: 700; }
+.chart-card .tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .05em;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0 5px;
+  margin-bottom: 5px;
+}
+
+/* ---------- Table ---------- */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 7px; margin: 14px 0; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 13px; }
+th, td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: var(--surface-2); font-weight: 700; color: var(--fg); }
+tr:last-child td { border-bottom: 0; }
+td { color: var(--muted); }
+td b { color: var(--fg); }
+
+/* ---------- FAQ ---------- */
+.faq-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.faq {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: 7px;
+  padding: 12px 14px;
+}
+.faq .q { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+.faq .a { font-size: 13px; color: var(--muted); line-height: 1.7; margin: 0; }
+
+/* ---------- Checklist ---------- */
+.checklist { display: grid; gap: 7px; margin: 14px 0 0; }
+.check {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 9px;
+  align-items: start;
+  font-size: 13.5px;
+}
+.check .box {
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--accent);
+  border-radius: 3px;
+  margin-top: 4px;
+}
+.check b { font-weight: 700; }
+
+/* ---------- Footer ---------- */
+.footer {
+  margin-top: 36px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 980px) {
+  .shell { grid-template-columns: 1fr; gap: 18px; }
+  .toc { position: static; border-top: 1px solid var(--line); padding-top: 10px; }
+  .toc a { display: inline-block; border-left: 0; padding: 3px 0; margin-right: 14px; }
+  .toc a:hover, .toc a.active { border-left: 0; text-decoration: underline; }
+  .hero-main { grid-template-columns: 1fr; gap: 18px; padding: 24px 20px; }
+  .chart-grid.three, .chart-grid.two, .faq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .facts { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  body { font-size: 14.5px; }
+  .hero-main { padding: 20px 16px; }
+  h1 { font-size: 30px; }
+  .chart-grid.three, .chart-grid.two, .faq-grid { grid-template-columns: 1fr; }
+  .map-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .map-boxes.three { grid-template-columns: 1fr; }
+  .map-boxes.two { grid-template-columns: 1fr; }
+  .path span { white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
+.toplink { display:flex; justify-content:flex-end; padding:10px 2px 0; }
+.toplink a { font-size:13px; text-decoration:none; border:1px solid var(--line);
+  background:var(--surface); padding:4px 10px; border-radius:6px; color:var(--accent); }
+.toplink a:hover { border-color:var(--accent); background:var(--accent-soft); }
+
+</style>
+</head>
+<body>
+
+
+<div class="page"><div class="toplink"><a href="/wip_analysis">← 返回 WIP 超期分析</a></div>
+  <header class="hero">
+    <div class="hero-main">
+      <div>
+        <div class="eyebrow">NTO 生产进度 · 现场使用说明</div>
+        <h1>WIP超期分析使用指南</h1>
+        <p class="lead">这个页面就干一件事：把在线 WIP 超过设定天数还没做完的 LOT 拎出来，告诉你是什么型号、卡在哪道工序、谁负责。下面按页面顺序说明，第一次用照着走一遍就行。</p>
+        <div class="chips">
+          <span class="chip"><b>5 分钟</b>看完</span>
+          <span class="chip"><b>免登录</b>查看</span>
+          <span class="chip"><b>管理员</b>可维护</span>
+        </div>
+      </div>
+      <aside class="quick" aria-label="日常最短路径">
+        <div class="kicker">日常最短路径</div>
+        <ol>
+          <li><strong>打开</strong> <code>/wip_analysis</code></li>
+          <li><strong>设阈值</strong>，选系列/型号</li>
+          <li><strong>点图</strong>筛选，看明细</li>
+          <li><strong>导出</strong>给领导</li>
+        </ol>
+      </aside>
+    </div>
+  </header>
+
+  <div class="shell">
+    <nav class="toc" aria-label="目录">
+      <div class="toc-title">目录</div>
+      <a href="#what">1. 它是干什么的</a>
+      <a href="#open">2. 打开页面</a>
+      <a href="#numbers">3. 先看五个数</a>
+      <a href="#charts">4. 八个图怎么用</a>
+      <a href="#detail">5. LOT 明细</a>
+      <a href="#export">6. 导出</a>
+      <a href="#admin">7. 管理员维护</a>
+      <a href="#faq">8. 常见问题</a>
+      <a href="#remember">9. 记住这几条</a>
+    </nav>
+
+    <main class="content">
+      <section class="sec" id="what">
+        <div class="sec-head"><span class="step-no">01</span><h2>它是干什么的</h2></div>
+        <p>一句话：<span class="strong">看哪些产品在线 WIP 天数太长，现在卡在哪，谁负责。</span></p>
+        <p>它不是工单台账，也不是后台录入工单的统计页。它直接读全量 MES 快照，只要 MES 里有在制 LOT，就会出现在这里，后台没录的型号也能看到。</p>
+        <div class="facts">
+          <div class="fact"><b>一行</b>一个 LOT，当前工序</div>
+          <div class="fact"><b>建单日</b>MES 的 STARTDATE</div>
+          <div class="fact"><b>超期</b>今天减建单日，严格大于阈值</div>
+          <div class="fact"><b>默认阈值</b>60 天，页面可改</div>
+          <div class="fact"><b>不算</b>已入库 InWareHouse</div>
+          <div class="fact"><b>算</b>WaitingTrackIn、WaitingMoveOut、RUNNING、HOLD</div>
+        </div>
+        <div class="callout warn">
+          <div class="tagline">别搞错</div>
+          <p>页面算的是“在线 WIP 多少天”，不是“在这道工序停了多久”。当前工序只说明它现在停在哪，不代表停留时长。</p>
+        </div>
+      </section>
+
+      <section class="sec" id="open">
+        <div class="sec-head"><span class="step-no">02</span><h2>打开页面</h2></div>
+        <p>两种方式，随便挑一个：</p>
+        <div class="path">
+          <span>系统选择页 → 第三张卡片「WIP 超期分析」</span>
+          <i>或</i>
+          <span>系统地址后面加 <code>/wip_analysis</code></span>
+        </div>
+        <p>看数据不用登录。要维护归属、导入 Owner、隐藏型号，才需要管理员账号。</p>
+        <p>从 WIP 页右上角点「后台登录」，登录成功会<strong>自动回到 WIP 页</strong>，不会把你甩到 NTO 后台。已经登录的话，按钮显示「后台管理」，点进去就是后台。</p>
+        <div class="callout">
+          <div class="tagline">先看右上角</div>
+          <p>右上角有“快照 年-月-日 时:分:秒”，这是 MES CSV 的时间。<strong>页面不会自己刷新</strong>，要最新数据就刷新浏览器，或者改一下筛选条件再查。快照时间很久不动，去找管理员检查 <code>refresh_mes_loop.vbs</code>。</p>
+        </div>
+      </section>
+
+      <section class="sec" id="numbers">
+        <div class="sec-head"><span class="step-no">03</span><h2>先看五个数</h2></div>
+        <p>第一次打开先别急着看图，最上面五个卡片先看一遍：</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>卡片</th><th>看什么</th></tr></thead>
+            <tbody>
+              <tr><td><b>超期 LOT 数</b></td><td>超过阈值的在制批次。这是你今天的异常盘子里有多少货。</td></tr>
+              <tr><td><b>涉及工单数</b></td><td>这些 LOT 归到多少张工单。LOT 多、工单少，说明一张单里很多批都压着。</td></tr>
+              <tr><td><b>超期数量</b></td><td>QTY 合计，单位 Ea。看量的大小。</td></tr>
+              <tr><td><b>平均超期</b></td><td>平均超了多少天。看整体严重程度。</td></tr>
+              <tr><td><b>最长超期</b></td><td>最久的那一批超了多少天。先把这个抓出来看。</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>看完卡片，把阈值和分档边界设一下。默认 60 天，你觉得太松就调小，觉得太严就调大。分档边界是<strong>相对阈值</strong>的，比如默认 <code>15,30,60,120</code>，就是 61-75、76-90、91-120、120 天以上。</p>
+        <div class="callout">
+          <div class="tagline">记住</div>
+          <p>先定范围，再看图。阈值、系列、型号没选好，图表再多也是乱的。</p>
+        </div>
+      </section>
+
+      <section class="sec" id="charts">
+        <div class="sec-head"><span class="step-no">04</span><h2>八个图怎么用</h2></div>
+        <p>页面中间分三组，共八个图。不用每次都全看，按你今天的任务挑。</p>
+
+        <div class="map" aria-label="页面布局示意">
+          <div class="map-label">页面从上到下</div>
+          <div class="map-cards">
+            <div>超期 LOT</div><div>工单数</div><div>数量 Ea</div><div>平均超期</div><div>最长超期</div>
+          </div>
+          <div class="map-row">
+            <div class="grp">时间与工序</div>
+            <div class="map-boxes three"><div>系列分布</div><div>超期天数分档</div><div>当前工序 TOP</div></div>
+          </div>
+          <div class="map-row">
+            <div class="grp">产品型号</div>
+            <div class="map-boxes two"><div>顶层型号 TOP</div><div>细分项 TOP</div></div>
+          </div>
+          <div class="map-row">
+            <div class="grp">负责人</div>
+            <div class="map-boxes three"><div>Assy PC Owner</div><div>MPC Owner</div><div>Inline/ENG Owner</div></div>
+          </div>
+          <div class="map-table">LOT 明细表</div>
+        </div>
+
+        <div class="chart-group">
+          <div class="chart-group-head"><b>时间与工序</b><span>先看严重程度和卡点</span></div>
+          <div class="chart-grid three">
+            <article class="chart-card">
+              <div class="tag">01 · 系列</div>
+              <h3>按系列分布</h3>
+              <p class="what">塑封、灌封、未分类各占多少。</p>
+              <p class="how"><b>怎么点：</b>点条或图例筛选。选了塑封，灌封的数据、型号、Owner 都不会再出现。要两边一起看，把系列切回“全部”。</p>
+            </article>
+            <article class="chart-card">
+              <div class="tag">02 · 天数</div>
+              <h3>按超期天数分档</h3>
+              <p class="what">61-75、76-90、91-120、120 天以上，各有多少批。柱高就是批次数。</p>
+              <p class="how"><b>怎么点：</b>点柱子筛选，再点一下取消。先把最长的那一档点出来看。</p>
+            </article>
+            <article class="chart-card">
+              <div class="tag">03 · 工序</div>
+              <h3>按当前工序 TOP</h3>
+              <p class="what">现在停在哪道工序的批次数最多。只显示前 8。</p>
+              <p class="how"><b>怎么点：</b>点工序筛选，看这一道工序压了哪些型号、哪些负责人。</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="chart-group">
+          <div class="chart-group-head"><b>产品型号</b><span>先看大类，再看细分</span></div>
+          <div class="chart-grid two">
+            <article class="chart-card">
+              <div class="tag">04 · 顶层</div>
+              <h3>按顶层型号 TOP</h3>
+              <p class="what">PDFN、HD1 SIC 这类大类的超期批次。顶层型号取 MPC Owner 表的 TECHNOLOGY。</p>
+              <p class="how"><b>怎么点：</b>点大类筛选，下面的细分项下拉会跟着只显示这个大类下的型号。</p>
+            </article>
+            <article class="chart-card">
+              <div class="tag">05 · 细分</div>
+              <h3>按细分项 TOP</h3>
+              <p class="what">5*6、MB12 这些 PACKAGESIZE 的分布。比如 5*6 归在 PDFN 下。</p>
+              <p class="how"><b>怎么点：</b>点细分项筛选，和顶层下拉联动。</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="chart-group">
+          <div class="chart-group-head"><b>负责人</b><span>看到底该找谁</span></div>
+          <div class="chart-grid three">
+            <article class="chart-card">
+              <div class="tag">06 · Assy</div>
+              <h3>Assy PC Owner TOP</h3>
+              <p class="what">按 Assy PC Owner 统计超期 LOT，只显示前 8。</p>
+              <p class="how"><b>怎么点：</b>点人筛选。没匹配到的显示“未分配”。</p>
+            </article>
+            <article class="chart-card">
+              <div class="tag">07 · MPC</div>
+              <h3>MPC Owner TOP</h3>
+              <p class="what">按 MPC Owner 统计超期 LOT。</p>
+              <p class="how"><b>怎么点：</b>点人筛选，和 Assy、Inline 的条件可以叠加。</p>
+            </article>
+            <article class="chart-card">
+              <div class="tag">08 · Inline</div>
+              <h3>Inline/ENG Owner TOP</h3>
+              <p class="what">按现行负责人统计。状态含 HOLD 显示 ENG Owner，其余显示 Inline Owner。</p>
+              <p class="how"><b>怎么点：</b>点人筛选；HOLD 的批会归到 ENG 名下。</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="callout">
+          <div class="tagline">八个图一起用</div>
+          <p>点柱子不是装饰，是筛选。点一下高亮，其他图、卡片、明细跟着变；再点一下取消。多个图的条件可以叠加，比如“塑封 + 61-75 天 + 某个型号 + 某道工序”。顶部会显示已选条件，点 × 可以单独取消，也可以一键清空。</p>
+        </div>
+        <div class="callout warn">
+          <div class="tagline">别贪多</div>
+          <p>每张图只显示前 8 或前 10，不是只有这么多。完整清单用顶部「顶层型号 / 细分项」下拉。你选中的那一项即使不在前几名，也会自动补进来，方便取消。</p>
+        </div>
+      </section>
+
+      <section class="sec" id="detail">
+        <div class="sec-head"><span class="step-no">05</span><h2>LOT 明细</h2></div>
+        <p>下面的表是逐 LOT 的明细，按超期天数从大到小排。表格全宽、内容居中，不用左右拖。</p>
+        <p>先看这三列，基本就能判断：</p>
+        <div class="facts">
+          <div class="fact"><b>超期天数</b>红色的数字，越大越急</div>
+          <div class="fact"><b>当前工序</b>现在停在哪，配合工序描述看</div>
+          <div class="fact"><b>Owner 三列</b>Assy PC / MPC / Inline-ENG，HOLD 看 ENG</div>
+        </div>
+        <p>其他列：工单号、LOT 号、顶层型号、细分项、产品代码、建单日、状态、数量、系列、优先级、MES Owner。需要查具体某一批，就在上面搜索框输入工单号或 LOT 号。</p>
+        <p>一页 100 条。翻页用底部的首页、上一页、下一页、末页，或者直接输入页码跳转。</p>
+        <div class="callout">
+          <div class="tagline">看明细的顺序</div>
+          <p>先按超期天数抓最长的，再看当前工序是不是卡在同一个地方，最后看 Owner 三列该找谁。不要一上来从头翻到尾。</p>
+        </div>
+      </section>
+
+      <section class="sec" id="export">
+        <div class="sec-head"><span class="step-no">06</span><h2>导出</h2></div>
+        <p>右上角有「导出 CSV」和「导出 Excel」。<strong>导出的就是你当前筛选看到的数据</strong>，不是全量。</p>
+        <div class="path">
+          <span>先设阈值</span><i>→</i><span>选系列/型号</span><i>→</i><span>点图筛选</span><i>→</i><span>看卡片确认数量</span><i>→</i><span>导出</span>
+        </div>
+        <p>导出共 19 列，包含顶层型号、细分项、MES Owner、Assy PC Owner、MPC Owner、Inline/ENG Owner、Owner 类型和工艺流程。直接给领导或开会用都够。</p>
+        <div class="callout warn">
+          <div class="tagline">别直接导全量</div>
+          <p>全量几万行，领导也看不过来。先把范围缩小，比如先选系列，再选一个天数档，或者点一个顶层型号，再导出。</p>
+        </div>
+        <div class="callout">
+          <div class="tagline">多人同时导出</div>
+          <p>如果前面有人正在导大文件，右下角会弹提示：第几位、前面还有几个、预计多少秒。等它自动开始下载，不要反复点。系统同时最多跑 2 个导出，后面的自动排队。</p>
+        </div>
+      </section>
+
+      <section class="sec" id="admin">
+        <div class="sec-head"><span class="step-no">07</span><h2>管理员维护</h2></div>
+        <p>普通用户看到这里就可以停了。管理员需要维护三件事，都在 WIP 页右上角「归属与 Owner 维护」里。</p>
+
+        <h3>7.1 导入 Owner 表</h3>
+        <p>一个 <code>.xlsx</code> 里放三个 sheet 最省事：Assy PC Owner、MPC Owner、Inline Owner。也可以分三次导 <code>.csv</code> 或单 sheet Excel。<code>.xls</code> 先另存为 <code>.xlsx</code>。</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>表</th><th>关键列</th><th>怎么关联 MES</th></tr></thead>
+            <tbody>
+              <tr><td><b>Assy PC Owner</b></td><td>Product、TECHNOLOGY、PACKAGESIZE、Owner</td><td>PACKAGESIZE 对 PACKAGESIZE（Product 只作参考）</td></tr>
+              <tr><td><b>MPC Owner</b></td><td>TECHNOLOGY、PACKAGESIZE、MPC Owner、封装类型</td><td>PACKAGESIZE 对 PACKAGESIZE，同时提供 TECHNOLOGY 和封装类型</td></tr>
+              <tr><td><b>Inline Owner</b></td><td>TECHNOLOGY、SPECNAME、ENG Owner、Inline Owner</td><td>TECHNOLOGY + SPECNAME 对 SPECNAME</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>规则：<strong>所有 Owner 都以细分项 PACKAGESIZE 为锚点。</strong>Assy 按 PACKAGESIZE，MPC 按 PACKAGESIZE；Inline 先用 MPC 表把 PACKAGESIZE 关联到 TECHNOLOGY，再按 TECHNOLOGY+SPECNAME 匹配。细分项不在 MPC 表里就留空，不按 SPECNAME 猜。<strong>HOLD 取 ENG Owner，其他取 Inline Owner。</strong></p>
+        <p>同一类型再导一次会覆盖旧数据；空表不会清空旧数据。导完看顶部条数，少了就是表头没识别到，把表头截图发给管理员。</p>
+
+        <h3>7.2 归系列</h3>
+        <p>每个 PACKAGESIZE 选塑封、灌封或未分类。默认会拿两个类别库的产品白名单和 Owner 表的封装类型来补。</p>
+        <p>优先级：<strong>手工选塑封/灌封 &gt; Owner 表封装类型 &gt; 现有白名单</strong>。手工选“未分类”不会覆盖 Owner 表已经给出的封装类型，避免把导入结果压回未分类。</p>
+
+        <h3>7.3 隐藏僵尸型号</h3>
+        <p>每个型号前面有一个「显示」复选框，默认全部勾选。<strong>取消勾选并保存后，这个型号就从 WIP 超期分析里彻底消失</strong>：卡片、八个图、明细、导出、下拉都不再出现。</p>
+        <p>维护列表里还留着它，想恢复就重新勾上再保存。表头复选框可以全选/全不选；全不选会二次确认，防止手滑。</p>
+        <div class="callout warn">
+          <div class="tagline">管理员就记三件事</div>
+          <p>先导 Owner，再归系列，最后把僵尸型号的「显示」取消掉。保存按钮是「保存归属与显示」。</p>
+        </div>
+        <p class="small">这些维护只影响 WIP 超期分析页，不改后台原有的工单、看板和 Owner 表逻辑。</p>
+      </section>
+
+      <section class="sec" id="faq">
+        <div class="sec-head"><span class="step-no">08</span><h2>常见问题</h2></div>
+        <div class="faq-grid">
+          <article class="faq">
+            <div class="q">数据怎么不更新？</div>
+            <p class="a">页面不会自己刷新。先看右上角快照时间；要最新数据就刷新浏览器，或者改一下筛选再查。快照时间很久不动，找管理员检查 <code>refresh_mes_loop.vbs</code>。</p>
+          </article>
+          <article class="faq">
+            <div class="q">为什么看不到某个型号？</div>
+            <p class="a">先看系列是不是选成了另一个；再看管理员有没有在「归属与 Owner 维护」里把这个型号的「显示」取消勾选。两个都不是，再看 MPC Owner 表里有没有这个 PACKAGESIZE。</p>
+          </article>
+          <article class="faq">
+            <div class="q">为什么负责人是空的？</div>
+            <p class="a">Owner 表没导入，或者这个细分项（PACKAGESIZE）/ SPECNAME 在表里没有对应行。HOLD 的批如果 ENG Owner 是空的，也会显示空。图上会把这些归到“未分配”。</p>
+          </article>
+          <article class="faq">
+            <div class="q">为什么顶层型号和细分项一样？</div>
+            <p class="a">MPC Owner 表里没有这个 PACKAGESIZE 的 TECHNOLOGY，系统就先用 PACKAGESIZE 当顶层。把 MPC 表补上，重新导入就会显示 PDFN 这类顶层。</p>
+          </article>
+          <article class="faq">
+            <div class="q">为什么选了塑封，灌封就没了？</div>
+            <p class="a">系列是硬隔离，避免两个系列的数据混在一起。要两边一起看，把顶部系列切回“全部”。</p>
+          </article>
+          <article class="faq">
+            <div class="q">图表为什么只有前几名？</div>
+            <p class="a">为了不糊成一团，工序和 Owner 显示前 8，顶层和细分项显示前 10。完整清单用顶部下拉；你选中的项会自动补进图里。</p>
+          </article>
+          <article class="faq">
+            <div class="q">导出的数据和页面不一样？</div>
+            <p class="a">导出跟着当前筛选走。先看顶部已选条件，确认没有多选或漏选，再导出。</p>
+          </article>
+          <article class="faq">
+            <div class="q">能按单个产品代码隐藏吗？</div>
+            <p class="a">不能。隐藏是按 PACKAGESIZE，同一个型号下的所有 LOT 一起隐藏。要更细只能靠型号/工序/Owner 筛选。</p>
+          </article>
+          <article class="faq">
+            <div class="q">别人操作会影响我的页面吗？</div>
+            <p class="a">不会。筛选条件只存在你自己的浏览器里，别人调筛选不会改你的屏幕；页面也不会自动刷新。管理员改了归属、隐藏或 Owner 表，你下次刷新才会看到。</p>
+          </article>
+          <article class="faq">
+            <div class="q">为什么导出要排队？</div>
+            <p class="a">同时导大文件很占内存。系统最多同时跑 2 个导出，后面的自动排队。右下角会显示你的名次和预计等待时间，等它开始下载就行，不要反复点。</p>
+          </article>
+          <article class="faq">
+            <div class="q">两个管理员同时保存会怎样？</div>
+            <p class="a">后保存的会提示“配置已被其他管理员修改，请关闭后重新打开再保存”，不会悄悄覆盖前一个人的配置。关掉弹窗重开，确认后再保存一次。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="sec" id="remember">
+        <div class="sec-head"><span class="step-no">09</span><h2>记住这几条</h2></div>
+        <div class="checklist">
+          <div class="check"><span class="box"></span><span><b>先定范围，再看图，最后点明细或导出。</b>阈值、系列、型号没选好，图表再多也白搭。</span></div>
+          <div class="check"><span class="box"></span><span><b>点柱子就是筛选。</b>点一下高亮，再点一下取消；顶部已选条件可以单个删，也可以一键清空。</span></div>
+          <div class="check"><span class="box"></span><span><b>系列是硬隔离。</b>选了塑封就看不到灌封；要对比就选“全部”。</span></div>
+          <div class="check"><span class="box"></span><span><b>HOLD 找 ENG，其余找 Inline。</b>Assy 和 MPC 是另外两列，不要混。</span></div>
+          <div class="check"><span class="box"></span><span><b>页面不会自己刷新。</b>看右上角快照时间；要最新数据就刷新或改筛选。</span></div>
+          <div class="check"><span class="box"></span><span><b>管理员先导 Owner，再归系列，再隐藏僵尸型号。</b>保存按钮是“保存归属与显示”。</span></div>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span>适用版本 v2.30.1 · 页面地址 <code>/wip_analysis</code></span>
+        <span>数据源：MES数据库.csv · 仅用于内部生产管理</span>
+      </footer>
+    </main>
+  </div>
+</div>
+
+</body>
+</html>
